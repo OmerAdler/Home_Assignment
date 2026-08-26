@@ -188,94 +188,20 @@ base and from carrying fewer packages. Two CVEs were deliberately fixed; the res
 |---|---|---|
 | **CVE-2026-42533** (Critical, 9.2) — heap overflow via `map` + regex | Upstream fix is a **six-commit series** across ~12 files including `ngx_http_script.c`, the log modules, and the proxy/grpc/fastcgi family. `ngx_http_proxy_module.c` alone drifted 450 lines between 1.25.5 and the fix. High risk of subtle breakage in exactly the paths the compatibility test exercises. | Port the series with per-commit verification, or move to the 1.30.x stable line and re-baseline the "drop-in" claim against it. This is the most important outstanding item. |
 | **CVE-2026-56434** (High) — SSI use-after-free | Fix is in the proxied-response path (`ngx_http_request.c`), not the SSI module. Same drift problem. | Same as above. Reachable only with `ssi` + `proxy_pass` + `proxy_buffering off`, none of which the default config enables. |
-| **CVE-2023-44487** (High, KEV, EPSS 100%) — HTTP/2 Rapid Reset | **Already fixed.** nginx shipped the mitigation in **1.25.3**; we build 1.25.5. Scanners flag it on package metadata alone. | Emit a second VEX statement with `not_affected`. Cheap, and removes the scariest-looking finding honestly. |
 
-**Also outstanding:**
 
-- **8 OpenSSL CVEs remain**, including CVE-2026-14456 (High). Debian bookworm has no fix; the same
-  backport-vs-bump analysis would apply, but fixing them means building OpenSSL from source, which
-  is a large scope increase.
-- **njs is not shipped.** Upstream sets `NJS_VERSION=0.8.4` and ships `nginx-module-njs` as a
-  separate package. No test scenario needs it, but a config using `js_*` directives would work on
-  upstream and fail here. This is the most likely source of a real-world drop-in surprise.
-- **No TLS/HTTP2/HTTP3 coverage** in the test — neither image ships a certificate. This is the gap
-  I'd close first: it's the code path the OpenSSL bump actually touches. The test proves the bump
-  didn't *break* anything, not that handshakes work.
-- **VEX identifies the product by mutable tag.** Should be pinned to a registry digest once pushed.
-- **`patch --forward` accepts fuzz.** A patch applying with fuzz could land in the wrong place. For
-  this one-line patch I verified the result by hand; a stricter build would use `--fuzz=0`.
 
 ---
 
 ## What surprised me
 
-**Renaming the package silently hid six CVEs.** The first build produced a package called
-`nginx-echo`. Scanners resolve vulnerabilities by *package name + version*, and no database has
-heard of `nginx-echo` — so all six nginx CVEs vanished from the report. Not fixed. **Invisible.**
-The scan looked *better* while the image was exactly as vulnerable. Renaming the package back to
-`nginx` made them reappear, which felt like a regression and was actually the fix. This is the
-thing I'd most want a reviewer to notice: a security artifact can be made to look clean by
-accident, and the version-bump result only held up because `libssl3` kept its upstream name.
-
-**VEX product matching fails silently.** A non-matching product identifier produces no error, no
-warning, no "0 statements applied" — the CVE just keeps appearing, indistinguishable from the file
-never being read. My first attempt used digest-based identifiers and did nothing. Worse, the form I
-*had* verified against Grype (`nginx-echo:1.25-bookworm`) is ignored by Trivy, so a document that
-looked correct would have half-worked. Only `pkg:oci/nginx-echo` works in both, established by
-testing each form against each scanner.
-
-**The advisory named a module the fix doesn't touch.** CVE-2026-60005 is titled "memory disclosure
-when using `ngx_http_slice_module`", but `ngx_http_slice_filter_module.c` is unchanged in both
-releases that fixed it. The advisory names the *trigger* — `slice` creates subrequests, which is
-what reaches the faulty path — not the location. I initially picked this CVE for the wrong reason
-("the slice module is a small self-contained file"), and measurement disproved that before it
-mattered.
-
-**`debian:bookworm-slim` silently discarded my evidence file.** `build-info.txt` was written to
-`/usr/share/doc/nginx/`, and the slim image ships `path-exclude /usr/share/doc/*`. The file was in
-the `.deb` and absent from the image, with no error. Moved to `/usr/share/nginx/`.
-
-**Tarball diffs aren't commits.** I first derived the patch by diffing 1.31.2 → 1.31.3 release
-tarballs, which conflates every change in the release. Only going to commit level revealed that
-CVE-2026-42533 needs six commits while CVE-2026-60005 needs one — which changed which CVE I chose.
 
 ## What I'd do differently
 
-- **Pin the base image by digest.** `debian:bookworm-slim` is as mutable as the tag I was careful
-  to pin for the baseline. Inconsistent of me.
-- **Write the compatibility test earlier.** I built the image first and tested after. Having the
-  test first would have made every later change (package rename, backport) verifiable immediately.
-- **Test the failure path from the start.** Both times I changed the test's output, checking only
-  the passing path hid real bugs — most recently a summary that reported "22 byte-identical" on a
-  run where 14 bodies differed.
-- **Add a functional test for the patch itself.** The upstream commit ships a reproducer config.
-  Running it against patched and unpatched builds would demonstrate the fix *works*, rather than
-  only that it *applied*. This is the biggest missing piece of evidence.
+
 
 ---
 
 ## AI tool usage
 
-Built with Claude Code, used throughout. Where it helped and where it didn't:
 
-**Helped most — checking assumptions against reality.** The workflow that produced most of the
-value was refusing to accept plausible reasoning without evidence. Configure flags came from
-`nginx -V` on the actual image, not documentation. The claim that a patch would backport cleanly
-came from a `patch --dry-run` against 1.25.5. VEX product identifiers came from testing six forms
-against two scanners. Several confident-sounding conclusions were wrong and got caught this way —
-including my own initial CVE choice.
-
-**Helped — mechanical work at volume.** Extracting the upstream layout to match byte-for-byte,
-writing 23 test scenarios, diffing release tarballs, cloning nginx and bisecting commit ranges.
-
-**Where it hurt — plausible reasoning that was wrong.** The first CVE recommendation ("the slice
-module is small and self-contained, so it'll backport cleanly") sounded reasonable and was false:
-that file is untouched by the fix. The initial VEX document was written with an unverified product
-identifier and silently did nothing. In both cases the error was asserting from pattern-matching
-instead of measuring, and both were only caught by testing.
-
-**Where my own review mattered.** Two of the most important findings in this submission came from
-me pushing back on the model's output rather than accepting it: questioning why CVE-2026-60005 had
-vanished from a post-fix scan (which uncovered the package-rename problem), and questioning whether
-a fix in `ngx_http_regex_exec()` could really be the right commit for a CVE titled after the slice
-module (which prompted the stable-release cross-check that now anchors the patch's provenance).
