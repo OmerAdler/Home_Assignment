@@ -212,7 +212,7 @@ base and from carrying fewer packages. Two CVEs were deliberately fixed; the res
 
 ## Residual risk
 
-**Three nginx CVEs remain unfixed**, all High or Critical:
+**Some nginx CVEs remain unfixed**, all High or Critical:
 
 | CVE | Why not fixed | What I'd do next |
 |---|---|---|
