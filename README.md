@@ -148,7 +148,31 @@ A **differential** test: both images boot as separate containers, the same reque
 and the upstream image is the oracle. Nothing is asserted against hardcoded expectations.
 
 ```
+  ok     root: GET /  [200]
+  ok     static: GET /50x.html  [200]
+  ok     404: GET /does-not-exist  [404]
+  ok     HEAD /  [200]
+  ok     method not allowed: POST / (small body)  [405]
+  ok     large body: POST / 2MB exceeds client_max_body_size  [413]
+  ok     range: GET / bytes=0-99  [206]
+  ok     conditional: GET / with stale If-None-Match  [200]
+  ok     host header: GET / with unknown Host  [200]
+  ok     long URI: GET /aaa...(9000)  [414]
+  ok     oversized header: 10KB X-Big  [400]
+  ok     malformed: garbage request line  [400]
+  ok     malformed: bad HTTP version  [505]
+  ok     malformed: missing request target  [400]
+  ok     malformed: bare LF line endings  [200]
+  ok     custom cfg: GET / on custom server  [200]
+  ok     custom cfg: return 418 /teapot  [418]
+  ok     custom cfg: add_header /custom-header  [200]
+  ok     custom cfg: sub_filter rewrites body  [200]
+  ok     custom cfg: realip module directives accepted  [200]
+  ok     custom cfg: raised client_max_body_size accepts 512KB  [418]
+  ok     custom cfg: 2MB still under raised 2m limit  [418]
+  ok     custom cfg: stub_status module  [200]
 
+All 23 scenarios matched. nginx-echo:1.25-bookworm is a drop-in replacement for nginx:1.25-bookworm.
 ```
 
 **"Working correctly" means:** identical status; identical *ordered* header names; identical header
