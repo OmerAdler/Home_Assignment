@@ -112,7 +112,8 @@ against a freshly-allocated, uninitialized array — memory disclosure, or a wor
 **Why a backport and not a bump:** Debian bookworm has **no fixed nginx package** — the
 [security tracker](https://security-tracker.debian.org/tracker/CVE-2026-60005) lists bookworm as
 vulnerable, with only `sid` fixed. Grype reflects this with an *empty* `FIXED IN` column. There is
-nothing to upgrade to. Upstream fixed it in 1.31.3/1.30.4, but jumping there would stop this being
+nothing to upgrade to. Upstream fixed it in 1.31.3/1.30.4, [nginx-security-advisories](https://nginx.org/en/security_advisories.html)
+shows it, but jumping there would stop this being
 a drop-in replacement for 1.25. So the fix is ported back onto 1.25.5:
 
 ```diff
