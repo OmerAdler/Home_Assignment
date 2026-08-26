@@ -95,6 +95,9 @@ OpenSSL findings dropped from **40 unique CVEs to 8**. Only CVE-2024-6119 was de
 targeted; the other ~32 are a side effect of rebuilding on a current base. They are real fixes,
 but they are not engineering I should take credit for.
 
+Although debian tooling is not the preffered way as mentioned in the assignment, I wanted to demonstrate 
+understanding of this method too.
+
 ### CVE-2026-60005 — backport
 
 Uninitialized memory read in nginx itself. `ngx_http_regex_exec()` reallocates `r->captures` but
@@ -115,34 +118,23 @@ a drop-in replacement for 1.25. So the fix is ported back onto 1.25.5:
 
 One line, from upstream commit `0cca8e05`. It applies to 1.25.5 with a −59 line offset, no fuzz.
 
-nginx does not tag commits with CVE IDs, so the mapping was established from four converging
-signals — the 1.31.3 changelog wording, the commit message and its reproducer config (which uses
-both `map` and `slice`), a matching diffstat, and independent corroboration from the **1.30.4
-stable release**, which was published for exactly these three CVEs and contains a byte-identical
-one-line change. Full reasoning is in the patch header.
+I used those git commands to verify it:
+```
+git clone --filter=blob:none https://github.com/nginx/nginx.git
+git log --oneline release-1.31.2..release-1.31.3 | grep regex
+git show --format= 0cca8e05
 
-**Scanners still report it**, because the package version string is deliberately unchanged. That's
-expected for any backport, and is what [`vex/`](vex/) addresses — see below.
+```
+
+nginx does not tag commits with CVE IDs, so the mapping was established from two converging
+signals — the 1.31.3 changelog wording, and the commit message.
 
 ---
 
 ## VEX
 
-```bash
-make vex-demo
-```
-
-[`vex/CVE-2026-60005.openvex.json`](vex/CVE-2026-60005.openvex.json) is an OpenVEX v0.2.0
-attestation declaring the CVE `fixed` in this build, with the patch as justification.
-
-| Scanner | Without VEX | With VEX |
-|---|---|---|
-| Grype 0.117.0 | reported | **suppressed** |
-| Trivy 0.74.0 | reported | **suppressed** |
-
-It suppresses only that CVE — nginx findings drop 6 → 5, total 191 → 190. Status is `fixed`, not
-`not_affected`, because the vulnerable code path was genuinely patched rather than being present
-but unreachable. Details and the product-matching results are in [`vex/README.md`](vex/README.md).
+VEX is used for the backporting patch, since this method does not change the package name and version, so the
+scanners still think the CVE exists even if it is fixed. I added a vex file(JSON formatted) for scanning the image properly.
 
 ---
 
@@ -156,15 +148,7 @@ A **differential** test: both images boot as separate containers, the same reque
 and the upstream image is the oracle. Nothing is asserted against hardcoded expectations.
 
 ```
-  ok    root: GET /                              200 | 8 hdrs (3 volatile) | body 615B ==
-  ok    malformed: bad HTTP version              505 | 5 hdrs (1 volatile) | body 187B ==
-  ok    custom cfg: stub_status module           200 | 5 hdrs (1 volatile) | body ~shape
 
-Summary
-  scenarios : 23 passed, 0 failed
-  requests  : 46 (23 against each image)
-  headers   : 101 value-compared, 39 volatile (presence + format checked)
-  bodies    : 22 byte-identical, 1 shape-matched
 ```
 
 **"Working correctly" means:** identical status; identical *ordered* header names; identical header
@@ -174,11 +158,7 @@ byte-identical bodies.
 
 23 scenarios cover the default server, error paths, four malformed requests sent over raw sockets,
 and a custom config exercising `sub_filter`, `stub_status`, `realip` and `client_max_body_size`.
-Several of those directives double as module-presence assertions — a missing `--with-http_*_module`
-would stop nginx booting.
 
-The test was validated against a **negative control** (`CANDIDATE_IMAGE=nginx:alpine`): 23/23
-flagged, exit 1. Full documentation in [`test/README.md`](test/README.md).
 
 ---
 
