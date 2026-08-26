@@ -10,6 +10,7 @@ PYTHON          ?= python
 .PHONY: deb image test clean
 
 deb:
+	mkdir -p $(OUT_DIR)
 	docker build -t $(BUILDER_IMAGE) build
 	docker run --rm -e NGINX_VERSION=$(NGINX_VERSION) \
 		-v $(OUT_DIR):/build/out \
