@@ -56,7 +56,7 @@ docker pull nginx@sha256:a484819eb60211f5299034ac80f6a681b06f89e65866ce91f356ed7
 
 48% smaller — but this is a **side effect, not an optimisation goal**. It comes from not shipping
 the separate `nginx-module-njs` package and from `rm -rf /var/lib/apt/lists/*` in the
-`Containerfile`. See [Residual risk](#residual-risk) on njs.
+`Containerfile`. 
 
 ---
 
@@ -119,7 +119,7 @@ a drop-in replacement for 1.25. So the fix is ported back onto 1.25.5:
 One line, from upstream commit `0cca8e05`. It applies to 1.25.5 with a −59 line offset, no fuzz.
 
 I used those git commands to verify it:
-```
+```bash
 git clone --filter=blob:none https://github.com/nginx/nginx.git
 git log --oneline release-1.31.2..release-1.31.3 | grep regex
 git show --format= 0cca8e05
@@ -195,13 +195,15 @@ base and from carrying fewer packages. Two CVEs were deliberately fixed; the res
 
 ## What surprised me
 
+I thought it would be easier to choose which CVE to address, but it required continuous research throughout the process. I started with the version bump, but when I moved on to address the second CVE through backporting, I was concerned that I might need to choose a different CVE to work on through version bump, though that turned out not to be the case.
 
-## What I'd do differently
+Additionally, I was sure that backporting would be more complex than version bump, but in retrospect, it was simpler and resulted in far fewer lines in the build process. I aware to the fact it might differ between cases and each CVE has its best-practice fixing method.
 
+If I had more time, I would have run HTTPS scenarios in the Python test to verify that the first CVE was indeed resolved. In addition, I would have addressed the critical CVE-2026-42533.
 
 
 ---
 
 ## AI tool usage
 
-
+I used Claude Code to complete the task. It was very useful for exploring a domain that was new to me, and for its ability to run tests quickly. I defined the instructions and the logic, and it helped me implement them. Naturally, it makes mistakes along the way—mistakes that can cascade—which required me to verify why it did what it did, as well as correct its errors when necessary
