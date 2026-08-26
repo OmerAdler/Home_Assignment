@@ -1,6 +1,8 @@
 #!/usr/bin/env sh
 # build/build.sh — builds nginx 1.25.5 from source inside debian:bookworm-slim,
-# linked against an OpenSSL that already fixes CVE-2024-6119, and packages it as a .deb.
+# linked against an OpenSSL that already fixes CVE-2024-6119,
+# CVE-2026-60005 is fixed through backporting with patch command.
+# it is packaged as a .deb file.
 
 set -eu
 
@@ -41,6 +43,7 @@ echo "==> Applying backport patches"
 # upstream nginx commits onto the version we ship, for CVEs where no fixed
 # Debian package exists to bump to. Fail loudly rather than silently shipping
 # an unpatched binary - same principle as the OpenSSL version assertion above.
+
 if ! ls /build/patches/*.patch >/dev/null 2>&1; then
     echo "    FATAL: no patches found in /build/patches." >&2
     echo "    The backport fix would be silently skipped. Check that" >&2
@@ -92,6 +95,7 @@ echo "==> Matching upstream nginx:1.25-bookworm's file layout exactly"
 # backup *.default copies of every conf file, fastcgi.conf, the koi-*/win-utf charset
 # maps, and an /etc/nginx/html dir — none of which exist in the real image (verified via
 # `docker run --rm --entrypoint sh nginx:1.25-bookworm -c "ls -la /etc/nginx"`).
+
 rm -f "$PKGROOT"/etc/nginx/*.default
 rm -f "$PKGROOT/etc/nginx/fastcgi.conf" "$PKGROOT/etc/nginx/koi-utf" \
       "$PKGROOT/etc/nginx/koi-win" "$PKGROOT/etc/nginx/win-utf"
