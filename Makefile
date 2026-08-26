@@ -7,8 +7,6 @@ DEB_FILE      := $(OUT_DIR)/nginx_$(NGINX_VERSION)-1echo1_amd64.deb
 REFERENCE_IMAGE := nginx:1.25-bookworm
 PYTHON          ?= python
 
-VEX_FILE        := vex/CVE-2026-60005.openvex.json
-
 .PHONY: deb image test clean
 
 deb:
