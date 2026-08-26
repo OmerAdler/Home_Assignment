@@ -21,7 +21,6 @@ Requires Docker. Everything compiles inside containers — nothing is installed 
 ```bash
 make image     # builds the .deb from upstream source, then the container image
 make test      # boots both images side by side and diffs their HTTP behaviour
-make vex-demo  # shows the backported CVE disappearing under --vex
 ```
 
 `make image` runs two stages:
