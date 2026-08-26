@@ -13,10 +13,15 @@ image it replaces.
 | **Compatibility** | 23/23 HTTP scenarios byte-identical |
 
 ---
-
+## Prerequisites
+Requires docker. also pull those images:
+```bash
+docker pull debian:bookworm-slim
+docker pull nginx:1.25-bookworm
+```
 ## Build
 
-Requires Docker. Everything compiles inside containers — nothing is installed on the host.
+Everything compiles inside containers — nothing is installed on the host.
 
 ```bash
 make image     # builds the .deb from upstream source, then the container image
