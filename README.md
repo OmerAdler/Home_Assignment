@@ -172,9 +172,7 @@ and a custom config exercising `sub_filter`, `stub_status`, `realip` and `client
 | High | 179 | 27 |
 
 Files: [`baseline-grype.txt`](baseline-grype.txt) / [`baseline-trivy.txt`](baseline-trivy.txt)
-(upstream), [`baseline-grype-post-fix.txt`](baseline-grype-post-fix.txt) /
-[`baseline-trivy-post-fix.txt`](baseline-trivy-post-fix.txt) (this image, no VEX),
-[`grype-post-fix.txt`](grype-post-fix.txt) / [`trivy-post-fix.txt`](trivy-post-fix.txt)
+(upstream),[`grype-post-fix.txt`](grype-post-fix.txt) / [`trivy-post-fix.txt`](trivy-post-fix.txt)
 (this image, VEX applied).
 
 Most of that reduction is **not** targeted CVE work — it comes from rebuilding on a current Debian
