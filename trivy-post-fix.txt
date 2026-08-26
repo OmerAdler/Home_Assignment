@@ -4,7 +4,7 @@ Report Summary
 ┌─────────────────────────────────────────┬────────┬─────────────────┬─────────┐
 │                 Target                  │  Type  │ Vulnerabilities │ Secrets │
 ├─────────────────────────────────────────┼────────┼─────────────────┼─────────┤
-│ nginx-echo:1.25-bookworm (debian 12.15) │ debian │       197       │    -    │
+│ nginx-echo:1.25-bookworm (debian 12.15) │ debian │       196       │    -    │
 └─────────────────────────────────────────┴────────┴─────────────────┴─────────┘
 Legend:
 - '-': Not scanned
@@ -13,7 +13,7 @@ Legend:
 
 nginx-echo:1.25-bookworm (debian 12.15)
 =======================================
-Total: 197 (UNKNOWN: 3, LOW: 85, MEDIUM: 75, HIGH: 30, CRITICAL: 4)
+Total: 196 (UNKNOWN: 3, LOW: 85, MEDIUM: 75, HIGH: 29, CRITICAL: 4)
 
 ┌────────────────────┬─────────────────────┬──────────┬──────────────┬────────────────────────┬───────────────┬──────────────────────────────────────────────────────────────┐
 │      Library       │    Vulnerability    │ Severity │    Status    │   Installed Version    │ Fixed Version │                            Title                             │
@@ -555,10 +555,6 @@ Total: 197 (UNKNOWN: 3, LOW: 85, MEDIUM: 75, HIGH: 30, CRITICAL: 4)
 │ nginx              │ CVE-2026-42533      │ HIGH     │              │ 1.25.5-1echo1          │               │ nginx: NGINX: Arbitrary code execution via crafted HTTP      │
 │                    │                     │          │              │                        │               │ requests                                                     │
 │                    │                     │          │              │                        │               │ https://avd.aquasec.com/nvd/cve-2026-42533                   │
-│                    ├─────────────────────┤          │              │                        ├───────────────┼──────────────────────────────────────────────────────────────┤
-│                    │ CVE-2026-60005      │          │              │                        │               │ nginx: NGINX: Memory disclosure and denial of service in     │
-│                    │                     │          │              │                        │               │ ngx_http_slice_module                                        │
-│                    │                     │          │              │                        │               │ https://avd.aquasec.com/nvd/cve-2026-60005                   │
 │                    ├─────────────────────┼──────────┤              │                        ├───────────────┼──────────────────────────────────────────────────────────────┤
 │                    │ CVE-2026-56434      │ MEDIUM   │              │                        │               │ nginx: NGINX: Heap buffer over-read allows memory            │
 │                    │                     │          │              │                        │               │ modification or denial of service...                         │

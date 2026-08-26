@@ -2,10 +2,12 @@ NGINX_VERSION ?= 1.25.5
 BUILDER_IMAGE := nginx-echo-builder:bookworm
 IMAGE_TAG     := nginx-echo:1.25-bookworm
 OUT_DIR       := $(CURDIR)/dist
-DEB_FILE      := $(OUT_DIR)/nginx-echo_$(NGINX_VERSION)-1echo1_amd64.deb
+DEB_FILE      := $(OUT_DIR)/nginx_$(NGINX_VERSION)-1echo1_amd64.deb
 
 REFERENCE_IMAGE := nginx:1.25-bookworm
 PYTHON          ?= python
+
+VEX_FILE        := vex/CVE-2026-60005.openvex.json
 
 .PHONY: deb image test clean
 
@@ -25,6 +27,7 @@ image: deb
 test:
 	REFERENCE_IMAGE=$(REFERENCE_IMAGE) CANDIDATE_IMAGE=$(IMAGE_TAG) \
 		$(PYTHON) test/compat_test.py
+
 
 clean:
 	rm -rf $(OUT_DIR)

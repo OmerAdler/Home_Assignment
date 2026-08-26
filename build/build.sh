@@ -17,7 +17,7 @@ mkdir -p "$WORK" "$PKGROOT/DEBIAN" "$OUT"
 echo "==> Installing build dependencies (pulls current libssl-dev from bookworm-security)"
 apt-get update -qq
 apt-get install -y -qq --no-install-recommends \
-    build-essential  curl ca-certificates \
+    build-essential  curl ca-certificates patch \
     libpcre2-dev zlib1g-dev libssl-dev dpkg-dev
 
 echo "==> Verifying the linked OpenSSL already fixes CVE-2024-6119"
@@ -35,6 +35,26 @@ curl -fsSL "https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz" -o nginx.t
 echo "$NGINX_SHA256  nginx.tar.gz" | sha256sum -c -
 tar -xzf nginx.tar.gz
 cd "nginx-${NGINX_VERSION}"
+
+echo "==> Applying backport patches"
+# Each patch is named after the CVE it fixes. These port fixes from newer
+# upstream nginx commits onto the version we ship, for CVEs where no fixed
+# Debian package exists to bump to. Fail loudly rather than silently shipping
+# an unpatched binary - same principle as the OpenSSL version assertion above.
+if ! ls /build/patches/*.patch >/dev/null 2>&1; then
+    echo "    FATAL: no patches found in /build/patches." >&2
+    echo "    The backport fix would be silently skipped. Check that" >&2
+    echo "    build/Dockerfile does 'COPY patches /build/patches'." >&2
+    exit 1
+fi
+APPLIED_PATCHES=""
+for p in /build/patches/*.patch; do
+    name="$(basename "$p")"
+    echo "    applying $name"
+    patch -p1 --batch --forward < "$p"
+    APPLIED_PATCHES="${APPLIED_PATCHES}${APPLIED_PATCHES:+, }${name%.patch}"
+done
+echo "    applied: $APPLIED_PATCHES"
 
 echo "==> Configuring (flags mirror nginx.org's own build of nginx:1.25-bookworm exactly)"
 ./configure \
@@ -94,30 +114,36 @@ cp /build/pkg-overlay/etc/nginx/conf.d/default.conf "$PKGROOT/etc/nginx/conf.d/d
 cp html/index.html html/50x.html "$PKGROOT/usr/share/nginx/html/"
 
 echo "==> Recording build-time evidence (linked OpenSSL, for the README CVE table)"
-mkdir -p "$PKGROOT/usr/share/doc/nginx-echo"
+# NOTE: deliberately NOT /usr/share/doc/nginx - debian:bookworm-slim ships
+# "path-exclude /usr/share/doc/*" in /etc/dpkg/dpkg.cfg.d/docker, so dpkg would
+# silently drop this file on install and the evidence would never reach the image.
+mkdir -p "$PKGROOT/usr/share/nginx"
 {
     echo "nginx version : $NGINX_VERSION"
     echo "built (chroot): $(date -u +%FT%TZ)"
-    echo "libssl3       : $INSTALLED_OPENSSL"
+    echo "libssl3       : $INSTALLED_OPENSSL  (CVE-2024-6119 fixed by version bump)"
+    echo "patches       : $APPLIED_PATCHES  (backported onto $NGINX_VERSION)"
     ldd "$PKGROOT/usr/sbin/nginx"
-} > "$PKGROOT/usr/share/doc/nginx-echo/build-info.txt"
-cat "$PKGROOT/usr/share/doc/nginx-echo/build-info.txt"
+} > "$PKGROOT/usr/share/nginx/build-info.txt"
+cat "$PKGROOT/usr/share/nginx/build-info.txt"
 
 echo "==> Writing DEBIAN/control"
 DEB_VERSION="${NGINX_VERSION}-${PKG_REVISION}"
 cat > "$PKGROOT/DEBIAN/control" <<EOF
-Package: nginx-echo
+Package: nginx
 Version: ${DEB_VERSION}
 Section: httpd
 Priority: optional
 Architecture: amd64
 Depends: libssl3 (>= ${MIN_FIXED_OPENSSL}), libpcre2-8-0, zlib1g, libc6
 Maintainer: Omer Adler
-Description: nginx ${NGINX_VERSION} built from source, CVE-2024-6119 fixed via OpenSSL version bump
- Rebuild of nginx ${NGINX_VERSION} from upstream source, linked against a
- system OpenSSL that already contains the CVE-2024-6119 fix.
+Description: nginx ${NGINX_VERSION} rebuilt from source with CVE fixes
+ Rebuild of nginx ${NGINX_VERSION} from upstream source with two remediations:
+ CVE-2024-6119 fixed by bumping the linked system OpenSSL, and CVE-2026-60005
+ fixed by backporting upstream commit 0cca8e05 onto ${NGINX_VERSION}.
+ Applied patches: ${APPLIED_PATCHES}
 EOF
 
 echo "==> Building .deb"
-dpkg-deb --root-owner-group --build "$PKGROOT" "$OUT/nginx-echo_${DEB_VERSION}_amd64.deb"
-echo "==> Done: $OUT/nginx-echo_${DEB_VERSION}_amd64.deb"
+dpkg-deb --root-owner-group --build "$PKGROOT" "$OUT/nginx_${DEB_VERSION}_amd64.deb"
+echo "==> Done: $OUT/nginx_${DEB_VERSION}_amd64.deb"

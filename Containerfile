@@ -16,8 +16,8 @@ RUN groupadd --system --gid 101 nginx \
 
 ARG NGINX_VERSION=1.25.5
 ARG PKG_REVISION=1echo1
-COPY dist/nginx-echo_${NGINX_VERSION}-${PKG_REVISION}_amd64.deb /tmp/nginx-echo.deb
-RUN dpkg -i /tmp/nginx-echo.deb && rm -f /tmp/nginx-echo.deb
+COPY dist/nginx_${NGINX_VERSION}-${PKG_REVISION}_amd64.deb /tmp/nginx.deb
+RUN dpkg -i /tmp/nginx.deb && rm -f /tmp/nginx.deb
 
 # Container-only runtime scaffolding, copied verbatim from nginx:1.25-bookworm (Step 1b) —
 # not part of the .deb, because a real Debian install of this package wouldn't have these.

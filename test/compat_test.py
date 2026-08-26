@@ -39,6 +39,7 @@ HTTP_DATE = re.compile(
 #   date          - wall-clock time of the response
 #   last-modified - static file mtime, i.e. each image's build date
 #   etag          - nginx derives it from mtime + size, so it inherits the above
+
 VOLATILE_HEADERS = {
     "date": HTTP_DATE,
     "last-modified": HTTP_DATE,
@@ -135,6 +136,7 @@ class Nginx:
 
 
 def free_port():
+
     """Ask the OS for an unused TCP port so repeat runs never collide."""
     with socket.socket() as s:
         s.bind(("127.0.0.1", 0))
@@ -143,6 +145,7 @@ def free_port():
 
 @contextlib.contextmanager
 def running(image, label):
+
     """Boot `image` with custom.conf mounted in; always clean up on exit."""
     suffix = "".join(random.choices(string.ascii_lowercase, k=6))
     nginx = Nginx(image, f"compat-{label}-{suffix}", free_port(), free_port())
@@ -218,6 +221,7 @@ def send_http(port, sc):
 
 
 def send_raw(port, payload):
+
     """Send bytes verbatim, then parse whatever comes back by hand."""
     with socket.create_connection(("127.0.0.1", port), timeout=15) as s:
         s.sendall(payload)
@@ -241,6 +245,7 @@ def send_raw(port, payload):
     headers = [(k.strip().lower(), v.strip())
                for k, _, v in (line.partition(":") for line in lines[1:])
                if v]
+
     return Response(status, headers, body)
 
 
@@ -254,6 +259,7 @@ def send_raw(port, payload):
 # body ........... byte-for-byte, unless the scenario declares a body_shape
 
 def compare(ref, cand, body_shape):
+
     """Return a list of human-readable differences; empty means equivalent."""
     diffs = []
 
@@ -340,6 +346,7 @@ def main():
                 print(f"  ok     {sc.name}  [{ref_resp.status}]")
 
     print()
+
     if failures:
         print(f"{len(failures)} of {len(SCENARIOS)} scenarios MISMATCHED:\n")
         for name, diffs in failures:

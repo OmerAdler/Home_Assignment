@@ -5,7 +5,6 @@ libgnutls30         3.7.9-2+deb12u7                      deb   CVE-2011-3389    
 nginx               1.25.5-1echo1                        deb   CVE-2009-4487     Negligible  29.5% (98th)   1.5           
 libtasn1-6          4.19.0-2+deb12u1        (won't fix)  deb   CVE-2025-13151    High        1.1% (63rd)    0.8           
 nginx               1.25.5-1echo1           (won't fix)  deb   CVE-2013-0337     Low         2.2% (81st)    0.7           
-nginx               1.25.5-1echo1                        deb   CVE-2026-60005    High        0.7% (50th)    0.6           
 libtinfo6           6.4-4                   (won't fix)  deb   CVE-2023-50495    Medium      1.0% (58th)    0.6           
 ncurses-base        6.4-4                   (won't fix)  deb   CVE-2023-50495    Medium      1.0% (58th)    0.6           
 ncurses-bin         6.4-4                   (won't fix)  deb   CVE-2023-50495    Medium      1.0% (58th)    0.6           
