@@ -1,0 +1,19 @@
+# Everything in this repo is consumed by Linux tooling: shell scripts run inside
+# containers, `patch` matches context lines byte-for-byte, and make parses recipes.
+# Git for Windows sets core.autocrlf=true by default, which checks files out with
+# CRLF and breaks all three:
+#
+#   build.sh   -> /usr/bin/env: 'sh\r': No such file or directory
+#   *.patch    -> context lines stop matching; the backport silently fails to apply
+#   Makefile   -> recipe parsing errors
+#
+# Forcing LF in the working tree makes the build behave identically on Windows,
+# macOS and Linux regardless of the cloner's git configuration.
+* text=auto eol=lf
+
+# Binary artefacts - never touch these
+*.pdf  binary
+*.deb  binary
+*.png  binary
+*.jpg  binary
+*.gz   binary
